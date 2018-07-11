@@ -5,5 +5,5 @@ function get_payload() {
 function get_payload_later(callback) {
     setTimeout(() => {
         callback(get_payload())
-    }, 0)
+    }, 1000)
 }

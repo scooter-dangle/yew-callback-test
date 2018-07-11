@@ -17,14 +17,12 @@ struct Model {
     payload: String,
     // Pointless field just to have something that's been manipulated
     debugged_payload: String,
+    link: ComponentLink<Model>,
 }
 
 enum Msg {
     Payload(String),
-    // Not sure whether this is actually necessary. I assume I need it to
-    // express the return value of a button click that triggers an asynchronous
-    // call.
-    Deferred,
+    AsyncPayload,
 }
 
 #[derive(Default, PartialEq, Eq, Clone)]
@@ -36,16 +34,23 @@ impl Component for Model {
     type Message = Msg;
     type Properties = Props;
 
-    fn create(Props { payload }: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(Props { payload }: Self::Properties, link: ComponentLink<Self>) -> Self {
         let debugged_payload = format!("{:?}", payload);
-        Self { payload, debugged_payload }
+        Self {
+            payload,
+            debugged_payload,
+            link,
+        }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         use Msg::*;
         match msg {
             Payload(payload) => self.change(Self::Properties { payload }),
-            Deferred => false,
+            AsyncPayload => {
+                get_payload_later(self.link.send_back(Msg::Payload));
+                false
+            }
         }
     }
 
@@ -65,17 +70,14 @@ impl Renderable<Model> for Model {
         html! {
             <div>
                 <textarea
-                    oninput=|InputData { value }| Msg::Payload(value),
+                    oninput=|input| Msg::Payload(input.value),
                     style="font-family: 'Monaco', monospace;",
                     value={ &self.payload },
                 ></textarea>
                 <button onclick=|_| Msg::Payload(get_payload()), >{
                     "Get the payload!"
                 }</button>
-                <button onclick=|_| {
-                    get_payload_later();
-                    Msg::Deferred
-                }, >{
+                <button onclick=|_| Msg::AsyncPayload, >{
                     "Get the payload later!"
                 }</button>
                 <p style="font-family: 'Monaco', monospace;", >{
@@ -94,18 +96,18 @@ where
 }
 
 fn get_payload() -> String {
-    let payload = js! {
-        return window.get_payload()
-    };
-    payload.into_string().unwrap()
+    (js! { return window.get_payload() }).into_string().unwrap()
 }
 
-fn get_payload_later() {
-    // TODO
-    ()
-
-    // // Something like the following
-    // js! {
-    //     return window.get_payload_later(@{something})
-    // };
+fn get_payload_later(payload_callback: Callback<String>) {
+    let callback = move |payload: String| payload_callback.emit(payload);
+    js! {
+        // Note: The semi-colons appear to be strictly necessary here due to
+        // how the interpolation is implemented
+        var callback = @{callback};
+        window.get_payload_later(function(payload) {
+            callback(payload);
+            callback.drop();
+        });
+    };
 }
