@@ -1,0 +1,8 @@
+[package]
+name = "yew-callback-test"
+version = "0.1.0"
+authors = ["Scott Steele <scottlsteele@gmail.com>"]
+
+[dependencies]
+yew = { git = "https://github.com/DenisKolodin/yew", rev = "d340aaf3563b1436b9f7f7ed13128dd5f81719ca", version = "0.5.0" }
+stdweb = "*"

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Yew callback test case</title>
+        <script>
+            var Module = {}
+            var __cargo_web = {}
+            Object.defineProperty(Module, 'canvas', {
+                get: function() {
+                    if( __cargo_web.canvas ) {
+                        return __cargo_web.canvas
+                    }
+
+                    var canvas = document.createElement( 'canvas' )
+                    document.querySelector( 'body' ).appendChild( canvas )
+                    __cargo_web.canvas = canvas
+
+                    return canvas
+                }
+            })
+        </script>
+    </head>
+    <body>
+        <div id="yew-callback-test"></div>
+        <script src="yew-callback-test.js"></script>
+        <script src="get-payload-script.js"></script>
+    </body>
+</html>
